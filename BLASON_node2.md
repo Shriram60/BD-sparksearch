@@ -99,7 +99,7 @@ Then show the two web UIs above.
 ```bash
 spark-sql --master spark://node3:7077
 ```
-Then run (Shriram will put the exact ids in `demo/iceberg_demo.sql` for you):
+Then run the statements in `demo/iceberg_demo.sql` (`git pull` first; Shriram generates it with the real snapshot ids after each run). The general shape:
 ```sql
 -- 1. history of changes to the documents table
 SELECT snapshot_id, committed_at, operation FROM lake.search.documents.snapshots;

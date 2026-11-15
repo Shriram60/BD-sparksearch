@@ -31,3 +31,9 @@ SELECT snapshot_id, committed_at, operation FROM lake.search.postings.snapshots;
 ## Rehearsal reset (back to Phase 0 state)
 Roll back each table to its Phase 0 snapshot (`CALL lake.system.rollback_to_snapshot('search.<table>', <id>)`),
 then `export.py --phase 1 --force` on the next rehearsal so v1 is rebuilt instead of skipped.
+
+## Blason's Iceberg demo file
+After Phase 1 (and after every rehearsal reset), regenerate and push it so node2 has the real snapshot ids:
+```bash
+spark-submit demo/make_iceberg_demo.py && git add demo/iceberg_demo.sql && git commit -m "update iceberg demo ids" && git push
+```
