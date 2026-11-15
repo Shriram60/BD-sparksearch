@@ -4,7 +4,7 @@ Do the steps in order; each one depends on the previous.
 
 ## 0. Once, on all 4 machines (everyone)
 
-1. ZeroTier: reuse network `bd-a2-kafka` (`3b19b3a71682751e`), everyone is already authorized. IPs are filled in `conf/hosts`.
+1. ZeroTier: network `3b19b3a71682751e`, everyone is already authorized. IPs are filled in `conf/hosts`.
 2. Set the hostname, so HDFS DataNodes register with a name the others can resolve:
    ```bash
    sudo hostnamectl set-hostname node3        # node1 / node2 / node3 / node4

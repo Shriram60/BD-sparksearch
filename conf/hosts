@@ -1,4 +1,4 @@
-# Append to /etc/hosts on ALL 4 machines (identical everywhere). ZeroTier network bd-a2-kafka (3b19b3a71682751e), shared with the Kafka assignment.
+# Append to /etc/hosts on ALL 4 machines (identical everywhere). ZeroTier network 3b19b3a71682751e.
 # Also comment out the "127.0.1.1 <hostname>" line, or daemons bind to loopback.
 10.113.232.70   node1
 10.113.232.74   node2
