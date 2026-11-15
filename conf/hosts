@@ -1,0 +1,6 @@
+# Append to /etc/hosts on ALL 4 machines (identical everywhere). Replace with real ZeroTier IPs.
+# Also comment out the "127.0.1.1 <hostname>" line, or daemons bind to loopback.
+10.147.17.11  node1
+10.147.17.12  node2
+10.147.17.13  node3
+10.147.17.14  node4

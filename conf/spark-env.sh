@@ -1,0 +1,11 @@
+export JAVA_HOME=$(ls -d /usr/lib/jvm/java-11-openjdk-* | head -1)
+export HADOOP_CONF_DIR=/opt/hadoop/etc/hadoop
+export SPARK_MASTER_HOST=node3
+export SPARK_MASTER_PORT=7077
+export SPARK_MASTER_WEBUI_PORT=8080
+export SPARK_WORKER_WEBUI_PORT=8081
+export SPARK_LOCAL_IP=__LOCAL_IP__
+export SPARK_WORKER_CORES=__WORKER_CORES__
+export SPARK_WORKER_MEMORY=__WORKER_MEMORY__
+export PYSPARK_PYTHON=python3
+export PYSPARK_DRIVER_PYTHON=python3
