@@ -21,6 +21,9 @@ LOCAL=1 node1_ingest/run_ingest.sh 0 node1_ingest/toy_data/pages.jsonl
 LOCAL=1 node1_ingest/run_ingest.sh 1 node1_ingest/toy_data/changes.jsonl
 LOCAL=1 demo/idempotency.sh 1 node1_ingest/toy_data/changes.jsonl
 
+# Real corpus, local mode (files in ~/data/pages.jsonl and ~/data/changes.jsonl)
+LOCAL=1 node1_ingest/run_ingest.sh 0 && LOCAL=1 node1_ingest/run_ingest.sh 1
+
 # Cluster (on node1). Files default to $DATA_DIR/{pages,changes}.jsonl, DATA_DIR=~/data
 node1_ingest/run_ingest.sh 0
 node1_ingest/run_ingest.sh 1
@@ -48,14 +51,19 @@ demo/idempotency.sh 1
    field is parsed as a STRING first, so one bad value never kills the job or nulls the whole record;
    we can then say exactly *what* is wrong. The raw line is kept for the rejected table.
 2. **Validate.** First failing rule becomes the `reason` in `lake.search.rejected`:
-   `invalid_json`, `bad_op`, `missing_doc_id`, `missing_version`, `bad_version_type` (not a
-   non-negative integer: `"abc"`, `1.5`), `missing_url`, `bad_url` (not http/https), `missing_title`,
+   `invalid_json`, `bad_op`, `missing_doc_id`, `bad_version_type` (a `version` is present but not a
+   non-negative integer), `missing_url`, `bad_url` (not http/https), `missing_title`,
    `missing_text` (empty/whitespace), `bad_links_type` (links not an array). Deletes
-   (`"op": "delete"`) only need `doc_id` + `version`. Blank lines are skipped, not rejected.
-3. **Dedup in the batch.** `row_number()` over `partitionBy(doc_id).orderBy(version desc, is_delete desc, raw asc)`,
-   keep row 1. The extra tie-breakers make the winner deterministic, so reruns pick the same row.
+   (`"op": "DELETE"`) only need `doc_id`. A missing `links` key means "no links". Blank lines are
+   skipped, not rejected.
+   **Version:** the real data has no `version` field, so a record's version = its **phase number**
+   (an explicit `version`, if a file ever has one, is used instead). Phase 1 rows (v1) therefore beat
+   Phase 0 rows (v0), and re-running an older phase can never overwrite a newer one.
+3. **Dedup in the batch.** `row_number()` over `partitionBy(doc_id).orderBy(version desc, line_no asc)`,
+   keep row 1: highest version wins, and for equal versions the **first** line in the file wins
+   (`line_no` = file order). Deterministic, so reruns pick the same row.
 4. **Change detection.** Left join with current `documents` on `doc_id`. Keep only *new* docs or a
-   **strictly higher** version. Equal/lower versions are ignored. A delete only applies if the doc
+   **strictly higher** version (explicit version, else the phase number). Equal/lower versions are ignored. A delete only applies if the doc
    exists and the delete's version is higher.
    The change set is materialised (`localCheckpoint`) before any write, so Spark can't lazily
    recompute it against the already-updated table.
@@ -90,11 +98,15 @@ Change detection compares an incoming record against the stored version **or** t
 version, so re-running Phase 0 after Phase 1 does not resurrect deleted documents (tested: the
 fingerprints stay identical). A doc can still come back with a *higher* version than its delete.
 
-### Tested locally (toy data, Spark 3.5.3 + Iceberg 1.6.1, local mode)
-Phase 0: 11 inserted, 12 rejected (11 stored, the repeated bad line once), 2 duplicates
-collapsed, 16 links (1→99 dangling, dropped). Phase 1: 2 inserted, 1 updated, 1 deleted,
-2 stale + 2 no-op deletes ignored, links +4 −2 (1→99 restored, links to/from deleted doc 10
-removed). `demo/idempotency.sh 1` and `demo/idempotency.sh 0` both print `UNCHANGED`.
+### Tested locally (Spark 3.5.3 + Iceberg 1.6.1, local mode, Python 3.12)
+| Data | Result |
+|---|---|
+| Real Phase 0 (`pages.jsonl`, 1,040 lines) | 20 rejected (`invalid_json`), 20 duplicates collapsed, **1,000 docs, 499 links** |
+| Real Phase 1 (`changes.jsonl`, 100 lines) | 25 inserted, 25 updated, 50 deleted -> **975 docs, 467 links** (7 links to deleted docs dropped) |
+| Re-run Phase 1, re-run Phase 0 after Phase 1 | `demo/idempotency.sh`: **UNCHANGED** both times |
+| Node 3 jobs on top (index -> pagerank -> export) | `export/v0` (1,000 docs) and `export/v1` (975 docs) published with `_SUCCESS` |
+| Course toy data | 2 rejected (`missing_doc_id`), dup "Soil duplicate" dropped; Phase 1: 1 new, 1 updated, 1 deleted |
+| `toy_data/` (own edge cases) | every reject reason, explicit versions, stale versions, no-op deletes |
 
 ## Viva notes
 

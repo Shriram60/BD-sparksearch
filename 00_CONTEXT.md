@@ -126,17 +126,31 @@ Shriram puts these in `/opt/spark/conf/spark-defaults.conf` on nodes 1–3 (exce
 
 ### 4.5 Dataset schema
 
-**ASSUMED. Verify with `head -n 3 pages.jsonl` and `head -n 3 changes.jsonl` as soon as the data is downloaded, then fix this section and tell the team.**
+**VERIFIED** by Arnav against the real files (download link in `Distributed Search Engine.html`).
+On node1 the files live at `~/data/pages.jsonl` and `~/data/changes.jsonl` (the download names
+the Phase 1 file `changes.json`; rename it to `changes.jsonl`, which is what `run_phase.sh` uses).
 
-Assumed record shape:
+`pages.jsonl` (Phase 0), 1,040 lines:
 ```json
-{"doc_id": "123", "url": "https://simple.wikipedia.org/wiki/X", "title": "X", "text": "...", "version": 1, "links": ["456", "789"]}
+{"doc_id": "1", "url": "https://simple.wikipedia.org/wiki/April", "title": "April", "text": "<wikitext>", "links": ["5", "7"]}
 ```
-Things to check in the real data:
-- Exact field names (`id` vs `doc_id`, etc.) and which are required.
-- Are links embedded per page, or separate link records?
-- Does `changes.jsonl` contain deletes (e.g. an `op` / `deleted` field)?
-- What do malformed records look like (bad JSON, missing fields, wrong types, empty text)?
+`changes.jsonl` (Phase 1), 100 lines:
+```json
+{"doc_id": "94", "op": "UPSERT", "url": "...", "title": "Beard (Phase 1)", "text": "...", "links": ["144"]}
+{"doc_id": "1", "op": "DELETE"}
+```
+- All values are strings; `doc_id` is a string (mostly digits, but also e.g. `phase1-new-001`).
+- **There is no `version` field.** Node 1 uses `version = phase number` (Phase 0 rows -> 0, Phase 1
+  rows -> 1), so "highest version wins" also works across phases. `documents.version` holds that.
+- Links are embedded per page (`links`: array of doc_id strings, ~500 in total). 40 pages have no
+  `links` key at all, which is treated as "no links", not as an error.
+- `op` only appears in `changes.jsonl`: `UPSERT` or `DELETE`. A `DELETE` row has only `doc_id` + `op`.
+- `text` is raw wikitext (`[[links]]`, `{{templates}}`, `'''bold'''`); the tokenizer strips the punctuation.
+- Dirty data in Phase 0: 20 truncated JSON lines (`{"doc_id": "malformed-N", "url":`) and 20 doc_ids
+  that appear twice (identical copies). Phase 1 has no malformed rows; 7 of its links point at docs
+  it deletes.
+- Expected Node 1 result: Phase 0 -> 1,000 documents, 499 links, 20 rejected. Phase 1 -> 25 new,
+  25 updated, 50 deleted -> 975 documents, 467 links.
 
 ### 4.6 Iceberg tables (catalog `lake`, namespace `search`)
 
