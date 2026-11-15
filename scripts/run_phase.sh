@@ -16,7 +16,6 @@ REPO="$(cd "$(dirname "$0")/.." && pwd)"
 NODE1_REPO="${NODE1_REPO:-$REPO}"
 NODE1_DATA="${NODE1_DATA:-~/data}"
 NODE4_URL="${NODE4_URL:-http://node4:8000}"
-[[ "$PHASE" == 0 ]] && FILE=pages.jsonl || FILE=changes.jsonl
 
 START=$(date +%s)
 step() {  # name, command...
@@ -29,11 +28,8 @@ step() {  # name, command...
 submit() { spark-submit --master spark://node3:7077 "$@"; }
 
 if [[ "$SKIP_INGEST" != "--skip-ingest" ]]; then
-  step "1. upload + ingest (node1)" ssh node1 "bash -lc '
-    set -e
-    hdfs dfs -mkdir -p /searchengine/raw/phase$PHASE
-    hdfs dfs -put -f $NODE1_DATA/$FILE /searchengine/raw/phase$PHASE/$FILE
-    cd $NODE1_REPO && spark-submit --master spark://node3:7077 node1_ingest/ingest.py --phase $PHASE'"
+  step "1. upload + ingest (node1)" ssh node1 \
+    "bash -lc 'cd $NODE1_REPO && DATA_DIR=$NODE1_DATA node1_ingest/run_ingest.sh $PHASE'"
 fi
 
 cd "$REPO/node3_compute"
