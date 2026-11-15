@@ -41,7 +41,6 @@ Backups:
 | solar system | Solar System (800), Planet (639), Asteroid (51) | Comet (168), Solar System (800), Planet (639) |
 | planet | Planet (639), Asteroid (51), Solar System (800) | Crust (166), Planet (639), Solar System (800) |
 | language | Language (419), Tone language (2012), First language (497) | Dutton's Speedwords (191), Capitalization (176), Language (419) |
-| chemistry | Chemistry (108), Microscope (512), Molecule (520) | Microscope (512), Molecule (520), Chemical element (247) |
 | religion | Religion (653), Supernatural (752), Being (85) | Christian (170), Religion (653), Cuba (178) |
 
 ## Open issue: PageRank shift in v1 (Node 1 / Node 3, found from the exports on node4)
@@ -62,6 +61,9 @@ Backups:
 ## Avoid
 
 - computer, china: the updated pages Computer (112) and China (120) fall out of the top 5 in v1 (same PageRank issue).
+- chemistry: Chemistry (Phase 1) (108) drops from #1 to #7 in v1. It still has the highest BM25 (5.71), but its
+  PageRank fell 0.00176 → 0.00028 while the pages above it kept ~0.0019. The corpus max rising (0.00176 → 0.00399)
+  is only part of it: the max rose 2.3×, Chemistry's own PageRank fell 6.3×.
 - Odd top 3 in v0: football, president, animal, mountain (Zebra #1), earthquake (months), moon, dinosaur,
   painting, electricity, democracy, climate change, ancient egypt, world war.
 - "phase 1" by title: search only indexes page text, not titles.
