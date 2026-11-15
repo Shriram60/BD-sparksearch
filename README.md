@@ -94,7 +94,14 @@ cd node4_search && .venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000
 ```
 Check: http://node3:8080 shows 2 workers, http://node2:9870 shows 2 DataNodes, http://node4:8000 is up.
 
-**4. Run a phase**
+**4. Run a phase: automatic (one command each, any order)**
+```bash
+./scripts/auto_node3.sh N                     # Shriram, node3: coordinates and waits for the others
+./scripts/auto_node1.sh N --idempotency       # Arnav, node1: waits for go, ingests, idempotency demo
+./scripts/auto_node4.sh N                     # Monty, node4: waits for vN, runs demo queries
+```
+
+**4b. Run a phase: manual**
 ```bash
 node1_ingest/run_ingest.sh 0                   # node1
 ./scripts/run_phase.sh 0 --skip-ingest         # node3: index → PageRank → export → node4 switch

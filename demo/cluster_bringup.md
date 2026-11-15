@@ -14,6 +14,23 @@ Shriram can also run every node2 step remotely over `ssh node2`, or read the com
 
 ---
 
+## ⚡ Automatic mode (recommended): one command per person
+
+Once section A (setup) is done, each person runs **one** script on their own machine, in **any
+order**. The scripts wait for each other through marker files on HDFS (`/searchengine/control/`).
+
+| Who | Command | What it does by itself |
+|---|---|---|
+| Shriram (node3) | `./scripts/auto_node3.sh N` | starts node3's daemons, waits for HDFS + workers, signals node1, waits for ingest, runs index → PageRank → export, waits for node4 to switch |
+| Arnav (node1) | `./scripts/auto_node1.sh N --idempotency` | waits for node3's go, ingests, reports back; then waits for the whole phase and runs the idempotency demo (drop `--idempotency` to skip it) |
+| Monty (node4) | `./scripts/auto_node4.sh N` | starts the search service if needed, waits until it serves vN, runs the demo queries |
+
+Blason (node2) still starts his NameNode, DataNode and worker by hand (section B: B1, B4);
+`auto_node3.sh` waits until they are up. Scripts print a status line every 30 s while waiting and
+stop with a red FAILED line on any error; node4 then keeps serving the previous version.
+
+---
+
 ## A. One-time setup (skip any step already done)
 
 | # | Who | Command | Done when |
