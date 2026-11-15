@@ -74,10 +74,10 @@ Install paths (all nodes): `/opt/hadoop`, `/opt/spark`. Linux user: whatever you
 
 ```
 # /etc/hosts — IDENTICAL on all 4 machines
-10.147.17.11  node1
-10.147.17.12  node2
-10.147.17.13  node3
-10.147.17.14  node4
+10.113.232.70   node1
+10.113.232.74   node2
+10.113.232.128  node3
+10.113.232.224  node4
 ```
 
 - **Ubuntu gotcha:** delete or comment out the `127.0.1.1 <your-hostname>` line in `/etc/hosts`, otherwise the NameNode / Spark master binds to loopback and no other node can connect.

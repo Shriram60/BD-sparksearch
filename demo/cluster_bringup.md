@@ -4,7 +4,7 @@ Do the steps in order; each one depends on the previous.
 
 ## 0. Once, on all 4 machines (everyone)
 
-1. Join the same ZeroTier network. Note each machine's ZeroTier IP, put the real IPs in `conf/hosts`, push.
+1. ZeroTier: reuse network `bd-a2-kafka` (`3b19b3a71682751e`), everyone is already authorized. IPs are filled in `conf/hosts`.
 2. Set the hostname, so HDFS DataNodes register with a name the others can resolve:
    ```bash
    sudo hostnamectl set-hostname node3        # node1 / node2 / node3 / node4
@@ -12,7 +12,7 @@ Do the steps in order; each one depends on the previous.
 3. `/etc/hosts`: paste the 4 lines from `conf/hosts` and **comment out the `127.0.1.1` line**.
 4. Firewall: allow only the ZeroTier subnet instead of disabling it:
    ```bash
-   sudo ufw allow from 10.147.17.0/24 && sudo ufw enable   # use the real subnet
+   sudo ufw allow from 10.113.232.0/24 && sudo ufw enable
    ```
 5. Check: `ping node1`, `ping node2`, `ping node3`, `ping node4` all work from every machine.
 6. Tools: `git pull`, then
