@@ -152,7 +152,7 @@ Pinned in **`tools/versions.env`**, the only place versions are defined.
   the old or the new index, never a mix. If anything fails, it keeps serving the previous version.
 - Ranking: BM25 (k₁ = 1.2, b = 0.75), then
   `final = 0.7 · bm25 / max_bm25_in_results + 0.3 · pagerank / max_pagerank`.
-- API: `/search?q=…&k=…`, `/health`, `/versions`, `POST /reload`; UI with a live version badge.
+- API: `/search?q=…&k=…` (or `&limit=…`), `/health`, `/versions`, `POST /reload`; UI with a live version badge.
 
 ### 7.6 One command: `scripts/run_phase.sh N`
 On node3: (ingest on node1 over ssh, or `--skip-ingest` if Arnav runs it) → index → PageRank →
@@ -225,7 +225,7 @@ and stops at the first failure (node4 then keeps serving the previous version).
 |---|---|---|
 | Infrastructure & Phase 0 verification | 3 | ⏳ needs node2 back (2 DataNodes, 2 workers, replication 2) |
 | Live Phase 1 demo | 6 | ✅ rehearsed on real data |
-| Search verification | 3 | ✅ queries chosen and confirmed (`limit` alias: Monty, open) |
+| Search verification | 3 | ✅ queries chosen and confirmed, `?limit=` works |
 | Idempotency | 2 | ✅ UNCHANGED |
 | Individual viva | 6 | ⏳ each person prepares their own node |
 
@@ -238,9 +238,8 @@ and stops at the first failure (node4 then keeps serving the previous version).
    - regenerate `demo/iceberg_demo.sql` (`spark-submit demo/make_iceberg_demo.py`)
 2. Fault-tolerance demo (kill node2's worker mid-PageRank) and replication check (`hdfs fsck` showing
    2 replicas): both need node2's worker and DataNode.
-3. Node 4: accept `limit` as an alias of `k` (Monty).
-4. Night before the evaluation: section B + C of the run plan, so node4 is serving **v0**.
-5. Viva prep (everyone).
+3. Night before the evaluation: section B + C of the run plan, so node4 is serving **v0**.
+4. Viva prep (everyone).
 
 ## 12. Repo map
 

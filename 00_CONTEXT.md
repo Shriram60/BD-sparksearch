@@ -1,9 +1,8 @@
 # Distributed Search Engine — Shared Team Context
 
-> **For Claude:** this is the single source of truth for the project. Read it fully before doing anything.
-> Your user owns ONE node (see "Ownership"). Only build what that node owns. Treat everything under
-> "Shared contracts" as fixed: if a change seems necessary, tell your user to raise it with the team
-> instead of changing it silently, because the other three nodes are coded against it.
+The single source of truth for the project. Everything under "Shared contracts" is fixed: all four
+nodes are coded against it, so any change has to be agreed by the whole team first.
+For a guided tour of what's built and what has happened, see `PROJECT_OVERVIEW.md`.
 
 Course: Big Data 2026 (UE24CS343AB2), PES University. Team: Shriram, Arnav, Monty, Blason.
 Official spec (rubric, dataset, architecture): `Distributed Search Engine.html` in the repo root; this file wins on team decisions, the spec wins on requirements.
@@ -33,7 +32,7 @@ Two data phases:
 | 3 | `node3` | **Shriram** | Spark master + worker, HDFS DataNode, drivers for index/PageRank/export | Inverted index, PageRank, export job, fault-tolerance demo, cluster configs, pipeline runner script |
 | 4 | `node4` | **Monty** | FastAPI + UI (no Spark/HDFS daemons) | Pulling exports, version switching, BM25, score blending, frontend |
 
-Blason does not use Claude. Shriram writes all Node 2 config files for him (Node 2 and Node 3 configs must match anyway).
+Shriram writes all Node 2 config files (Node 2 and Node 3 configs must match anyway).
 
 ---
 
@@ -218,17 +217,19 @@ Any step failing stops the run and **Node 4 keeps serving the previous version**
 ## 7. Repo layout
 
 ```
-search-engine/
+BD-sparksearch/
   00_CONTEXT.md            # this file
-  tasks/                   # one task file per person
-  common/stopwords.txt     # shared tokenizer stopwords (Shriram)
-  common/tokenizer.py       # reference tokenizer, copied by Node 3 & Node 4
+  PROJECT_OVERVIEW.md      # what is what, what has happened, status
+  *_nodeN.md               # one guide per person
+  tools/                   # pinned versions, install/check scripts (Shriram)
   conf/                    # Hadoop + Spark configs for nodes 1–3 (Shriram)
+  common/tokenizer.py      # shared tokenizer, used by Node 3 and Node 4 (Shriram)
+  common/stopwords.txt     # shared stopwords (Shriram)
   node1_ingest/            # Arnav
   node3_compute/           # Shriram
   node4_search/            # Monty
   scripts/run_phase.sh     # Shriram
-  demo/                    # queries.md, iceberg_demo.sql, runbooks
+  demo/                    # run plan, verification runbook, queries, demo scripts
 ```
 
 Develop with the toy dataset in Spark **local mode** (`--master local[*]` with a local Iceberg warehouse path) until the cluster is up. Final runs must use the main corpus.

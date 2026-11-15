@@ -10,8 +10,7 @@ Commands run from the repo root (`cd ~/BD-sparksearch`) in a **new terminal**.
 | node3 | Shriram | 10.113.232.128 | Spark master + worker, HDFS DataNode, index/PageRank/export, `run_phase.sh` |
 | node4 | Monty | 10.113.232.224 | search API + UI on :8000 |
 
-Blason doesn't use Claude: Shriram can run every node2 step for him over `ssh node2`, or read
-the commands to him on the call.
+Shriram can also run every node2 step remotely over `ssh node2`, or read the commands out on the call.
 
 ---
 

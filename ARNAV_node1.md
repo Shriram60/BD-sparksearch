@@ -1,9 +1,8 @@
 # Arnav — Node 1 (Ingestion)
 
-> **For Claude:** read `00_CONTEXT.md` first. Arnav owns Node 1 only: the ingestion Spark job and
-> data quality. Node 1 is a **client**: it runs the Spark driver but no Spark or HDFS daemons.
-> Do not change the Iceberg table schemas or `ingest_log` columns in CONTEXT §4.6 without telling
-> the team; Node 3 reads them.
+Node 1 owns the ingestion Spark job and data quality. It is a **client**: it runs the Spark driver
+but no Spark or HDFS daemons. The Iceberg table schemas and `ingest_log` columns (CONTEXT §4.6) are
+shared contracts, because Node 3 reads them. Implementation and commands: `node1_ingest/README.md`.
 
 ## Rubric you carry
 - Idempotency test (2 M): re-ingesting the same phase must not change table contents.

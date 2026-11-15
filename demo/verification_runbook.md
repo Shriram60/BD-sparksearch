@@ -213,7 +213,7 @@ to, which only have the base rank of about 0.00028. **Evaluator answer:** "146 g
 there are. Its main source 144 lost rank when Phase 1 rewired the chain feeding it, so 146's total
 falls. Our numbers match an independent implementation exactly."
 
-### Issue 2: still open (Monty)
+### Issue 2: fixed (Monty, 443de01)
 
-`/search?q=beard&limit=3` still returns 5 results: `limit` is ignored. Fix in `node4_search/app.py`:
-add `limit: int | None = Query(None, ge=1, le=100)` to `search()` and use `k = limit or k`.
+`/search` now accepts `limit` as an alias of `k`: `/search?q=beard&limit=3` returns 3 results
+(Mustache, Goatee, Hair). The course's copy-pasted commands work unchanged.
