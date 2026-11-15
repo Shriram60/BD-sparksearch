@@ -4,16 +4,16 @@
 #   node1_ingest/run_ingest.sh <phase> [file]
 #
 #   file defaults to $DATA_DIR/pages.jsonl (phase 0) or $DATA_DIR/changes.jsonl (phase >= 1),
-#   DATA_DIR defaults to /data/dataset.
+#   DATA_DIR defaults to ~/data (same as NODE1_DATA in scripts/run_phase.sh).
 #
 #   LOCAL=1 node1_ingest/run_ingest.sh 0 node1_ingest/toy_data/pages.jsonl
-#       -> no HDFS upload, Spark local mode, warehouse file:///tmp/sparksearch-warehouse
+#       -> no HDFS upload, Spark local mode, warehouse file:///tmp/searchengine/warehouse
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$HERE/spark_args.sh"
 
 PHASE="${1:?usage: $0 <phase> [file]}"
-DATA_DIR="${DATA_DIR:-/data/dataset}"
+DATA_DIR="${DATA_DIR:-$HOME/data}"
 if [[ $# -ge 2 ]]; then FILE="$2"
 elif [[ "$PHASE" == "0" ]]; then FILE="$DATA_DIR/pages.jsonl"
 else FILE="$DATA_DIR/changes.jsonl"; fi

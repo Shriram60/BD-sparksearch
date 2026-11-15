@@ -15,19 +15,20 @@ uploads raw files to HDFS and submits `ingest.py` to the Spark master on node3.
 ## Running
 
 ```bash
-# Dev / testing, no cluster needed (warehouse at file:///tmp/sparksearch-warehouse)
-rm -rf /tmp/sparksearch-warehouse
+# Dev / testing, no cluster needed (warehouse at file:///tmp/searchengine/warehouse)
+rm -rf /tmp/searchengine/warehouse
 LOCAL=1 node1_ingest/run_ingest.sh 0 node1_ingest/toy_data/pages.jsonl
 LOCAL=1 node1_ingest/run_ingest.sh 1 node1_ingest/toy_data/changes.jsonl
 LOCAL=1 demo/idempotency.sh 1 node1_ingest/toy_data/changes.jsonl
 
-# Cluster (on node1). Files default to $DATA_DIR/{pages,changes}.jsonl, DATA_DIR=/data/dataset
+# Cluster (on node1). Files default to $DATA_DIR/{pages,changes}.jsonl, DATA_DIR=~/data
 node1_ingest/run_ingest.sh 0
 node1_ingest/run_ingest.sh 1
 demo/idempotency.sh 1
 ```
 
-`run_phase.sh` (Shriram) only has to call `node1_ingest/run_ingest.sh N` on node1 (e.g. over ssh).
+`scripts/run_phase.sh` (Shriram) uploads the file itself and calls `ingest.py --phase N` on node1 over ssh;
+`ingest.py` reads `/searchengine/raw/phaseN/` by default, so both entry points work.
 
 ## Node 1 setup checklist
 

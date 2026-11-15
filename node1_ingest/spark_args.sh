@@ -2,7 +2,8 @@
 #   LOCAL=1  -> Spark local mode + local Iceberg warehouse (dev/testing, no cluster needed)
 #   default  -> cluster: master/catalog/warehouse come from /opt/spark/conf/spark-defaults.conf
 #               (CONTEXT 4.4). On node1 that file MUST set spark.driver.host = node1's ZeroTier IP.
-LOCAL_WAREHOUSE="${LOCAL_WAREHOUSE:-file:///tmp/sparksearch-warehouse}"
+# Same local root as node3_compute/common_spark.py, so local Node 1 + Node 3 runs share one warehouse.
+LOCAL_WAREHOUSE="${LOCAL_WAREHOUSE:-file://${SEARCH_LOCAL_ROOT:-/tmp/searchengine}/warehouse}"
 if [[ "${LOCAL:-0}" == "1" ]]; then
   SPARK_ARGS=(
     --master "local[*]"
