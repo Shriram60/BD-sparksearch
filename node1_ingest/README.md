@@ -9,6 +9,8 @@ uploads raw files to HDFS and submits `ingest.py` to the Spark master on node3.
 | `run_ingest.sh` | `hdfs dfs -put -f` the phase file into `raw/phaseN/`, then `spark-submit ingest.py` |
 | `spark_args.sh` | `LOCAL=1` → local mode + local warehouse; otherwise uses `spark-defaults.conf` |
 | `table_state.py` | Row count + content hash + current snapshot of each Node 1 table (for the idempotency demo) |
+| `reset_tables.sh` / `.py` | Drop the tables to start again from Phase 0 (needed when switching toy data → real data) |
+| `../demo/node1_checks.sql` | Read-only verification queries for the demo (counts, reject reasons, no dups, no dangling links, ingest_log, snapshots) |
 | `toy_data/` | Small Phase 0 / Phase 1 files covering every reject reason, dups, stale versions, deletes |
 | `../demo/idempotency.sh` | Idempotency demo: fingerprint → re-ingest → fingerprint → `UNCHANGED` |
 
@@ -29,6 +31,17 @@ node1_ingest/run_ingest.sh 0
 node1_ingest/run_ingest.sh 1
 demo/idempotency.sh 1
 ```
+
+**Switching from toy data to the real `pages.jsonl`: reset first.** Toy doc_ids (`1`–`5`) collide
+with real ones at the same version 0, so without a reset the real records would be ignored as
+"no change":
+```bash
+node1_ingest/reset_tables.sh --all            # asks for 'yes'; LOCAL=1 for the local warehouse
+hdfs dfs -rm -r -f /searchengine/export       # old exports (Shriram), and /serving/v* on node4 (Monty)
+```
+Course toy files in standard names: `DATA_DIR=~/data/toy node1_ingest/run_ingest.sh 0`.
+
+Verification queries: `spark-sql -f demo/node1_checks.sql` (prefix with `LOCAL=1` flags locally).
 
 `scripts/run_phase.sh` (Shriram) uploads the file itself and calls `ingest.py --phase N` on node1 over ssh;
 `ingest.py` reads `/searchengine/raw/phaseN/` by default, so both entry points work.
