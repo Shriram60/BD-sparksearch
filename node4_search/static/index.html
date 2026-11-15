@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SparkSearch</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --panel: #fff; --text: #1d1d1f; --muted: #6b6b70; --line: #e3e3e0;
+    --accent: #1a5fd0; --live: #127a3a; --live-bg: #e3f4e8; --warn: #a15c00; --warn-bg: #fdf0dc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141416; --panel: #1d1d20; --text: #ececef; --muted: #9a9aa2; --line: #2e2e33;
+      --accent: #7aa7ff; --live: #6fd394; --live-bg: #183323; --warn: #f0b764; --warn-bg: #3a2a12;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+           padding: 14px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  h1 { font-size: 18px; margin: 0; letter-spacing: -0.01em; }
+  #badge { font-weight: 600; font-size: 13px; padding: 3px 10px; border-radius: 999px;
+           background: var(--live-bg); color: var(--live); transition: transform .2s; }
+  #badge.down { background: var(--warn-bg); color: var(--warn); }
+  #badge.flash { transform: scale(1.25); }
+  #meta { color: var(--muted); font-size: 13px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  form { display: flex; gap: 8px; flex-wrap: wrap; }
+  input[type=search] { flex: 1 1 280px; font: inherit; padding: 10px 12px; border: 1px solid var(--line);
+                       border-radius: 8px; background: var(--panel); color: var(--text); }
+  button, select { font: inherit; padding: 9px 14px; border-radius: 8px; border: 1px solid var(--line);
+                   background: var(--panel); color: var(--text); cursor: pointer; }
+  button[type=submit] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .opts { display: flex; gap: 12px; align-items: center; margin: 10px 0 4px; color: var(--muted); font-size: 13px; flex-wrap: wrap; }
+  #cols { display: grid; gap: 20px; grid-template-columns: 1fr; margin-top: 12px; }
+  #cols.two { grid-template-columns: 1fr 1fr; }
+  @media (max-width: 760px) { #cols.two { grid-template-columns: 1fr; } }
+  .colhead { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .res { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+  .res a { color: var(--accent); font-weight: 600; text-decoration: none; font-size: 16px; }
+  .res a:hover { text-decoration: underline; }
+  .url { color: var(--muted); font-size: 12px; word-break: break-all; }
+  .snip { margin: 4px 0 6px; }
+  .scores { display: flex; gap: 14px; flex-wrap: wrap; font: 12px/1.4 ui-monospace, monospace; color: var(--muted); }
+  .scores b { color: var(--text); }
+  .empty { color: var(--muted); padding: 12px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SparkSearch</h1>
+  <span id="badge" class="down">connecting…</span>
+  <span id="meta"></span>
+</header>
+<main>
+  <form id="f">
+    <input type="search" id="q" placeholder="Search Simple English Wikipedia" autofocus>
+    <button type="submit">Search</button>
+  </form>
+  <div class="opts">
+    <label>Results <select id="k"><option>10</option><option>20</option><option>50</option></select></label>
+    <label>Compare with <select id="cmp"><option value="">(off)</option></select></label>
+  </div>
+  <div id="cols"></div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let liveVersion = null;
+
+async function getJSON(url, opts) {
+  const r = await fetch(url, opts);
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || r.statusText);
+  return r.json();
+}
+
+async function pollHealth() {
+  try {
+    const h = await getJSON("/health");
+    const badge = $("badge");
+    badge.className = h.version == null ? "down" : "";
+    badge.textContent = h.version == null ? "no data" : `live v${h.version}`;
+    $("meta").textContent = h.version == null ? "" : `${h.num_docs} docs · loaded ${h.loaded_at}` +
+      (h.last_error ? " · cluster unreachable, serving from memory" : "");
+    if (liveVersion !== null && h.version !== liveVersion) {
+      badge.classList.add("flash"); setTimeout(() => badge.classList.remove("flash"), 600);
+      refreshVersions();
+      if ($("q").value.trim()) run();
+    }
+    liveVersion = h.version;
+  } catch (e) {
+    $("badge").className = "down"; $("badge").textContent = "API down";
+  }
+}
+
+async function refreshVersions() {
+  try {
+    const v = await getJSON("/versions");
+    const sel = $("cmp"), keep = sel.value;
+    sel.innerHTML = '<option value="">(off)</option>' + v.versions.filter((x) => !x.live)
+      .map((x) => `<option value="${x.version}">v${x.version}</option>`).join("");
+    if ([...sel.options].some((o) => o.value === keep)) sel.value = keep;
+  } catch (e) {}
+}
+
+function column(data, label) {
+  const head = `<div class="colhead">${esc(label)} · ${data.results.length} results · ${data.took_ms} ms` +
+    (data.terms.length ? ` · terms: ${esc(data.terms.join(", "))}` : "") + "</div>";
+  if (!data.results.length) return head + '<div class="empty">No matching documents.</div>';
+  return head + data.results.map((r) => `
+    <div class="res">
+      <a href="${esc(r.url)}" target="_blank" rel="noopener">${r.rank}. ${esc(r.title)}</a>
+      <div class="url">doc_id ${esc(r.doc_id)} · ${esc(r.url)}</div>
+      <div class="snip">${esc(r.snippet)}</div>
+      <div class="scores"><span>score <b>${r.score.toFixed(4)}</b></span>
+        <span>bm25 <b>${r.bm25.toFixed(4)}</b></span><span>pagerank <b>${r.pagerank.toExponential(3)}</b></span></div>
+    </div>`).join("");
+}
+
+async function run() {
+  const q = $("q").value, k = $("k").value, cmp = $("cmp").value;
+  const params = (v) => `/search?q=${encodeURIComponent(q)}&k=${k}` + (v !== "" ? `&version=${v}` : "");
+  const cols = $("cols");
+  try {
+    const reqs = [getJSON(params(""))];
+    if (cmp !== "") reqs.push(getJSON(params(cmp)));
+    const [live, old] = await Promise.all(reqs);
+    cols.className = old ? "two" : "";
+    cols.innerHTML = `<div>${column(live, `live v${live.version}`)}</div>` +
+      (old ? `<div>${column(old, `v${old.version}`)}</div>` : "");
+    history.replaceState(null, "", `?q=${encodeURIComponent(q)}`);
+  } catch (e) {
+    cols.className = ""; cols.innerHTML = `<div class="empty">${esc(e.message)}</div>`;
+  }
+}
+
+$("f").addEventListener("submit", (e) => { e.preventDefault(); run(); });
+$("k").addEventListener("change", () => $("q").value.trim() && run());
+$("cmp").addEventListener("change", () => $("q").value.trim() && run());
+const initial = new URLSearchParams(location.search).get("q");
+if (initial) { $("q").value = initial; }
+pollHealth().then(() => initial && run());
+refreshVersions();
+setInterval(pollHealth, 3000);
+</script>
+</body>
+</html>
