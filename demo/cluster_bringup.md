@@ -1,81 +1,137 @@
-# Cluster bring-up (all 4 machines)
+# Run plan: who runs what, in what order
 
-Do the steps in order; each one depends on the previous.
+Go top to bottom. **Don't start a step until the "Done when" of the step before it is true.**
+Commands run from the repo root (`cd ~/BD-sparksearch`) in a **new terminal**.
 
-## 0. Once, on all 4 machines (everyone)
+| Node | Person | IP | Runs |
+|---|---|---|---|
+| node1 | Arnav | 10.113.232.70 | ingestion driver (no daemons) |
+| node2 | Blason | 10.113.232.74 | HDFS NameNode + DataNode, Spark worker |
+| node3 | Shriram | 10.113.232.128 | Spark master + worker, HDFS DataNode, index/PageRank/export, `run_phase.sh` |
+| node4 | Monty | 10.113.232.224 | search API + UI on :8000 |
 
-1. ZeroTier: network `3b19b3a71682751e`, everyone is already authorized. IPs are filled in `conf/hosts`.
-2. Set the hostname, so HDFS DataNodes register with a name the others can resolve:
-   ```bash
-   sudo hostnamectl set-hostname node3        # node1 / node2 / node3 / node4
-   ```
-3. `/etc/hosts`: paste the 4 lines from `conf/hosts` and **comment out the `127.0.1.1` line**.
-4. Firewall: allow only the ZeroTier subnet instead of disabling it:
-   ```bash
-   sudo ufw allow from 10.113.232.0/24 && sudo ufw enable
-   ```
-5. Check: `ping node1`, `ping node2`, `ping node3`, `ping node4` all work from every machine.
-6. Tools: `git pull`, then
-   - nodes 1-3: `./tools/install_node.sh`, post the `FINGERPRINT` line in chat; all three must be identical
-   - node 4: `./tools/install_node.sh node4`
+Blason doesn't use Claude: Shriram can run every node2 step for him over `ssh node2`, or read
+the commands to him on the call.
 
-## 1. Configs (nodes 1-3)
+---
 
-```bash
-./conf/install_conf.sh node1    # Arnav
-./conf/install_conf.sh node2    # Blason (with Shriram on a call)
-./conf/install_conf.sh node3    # Shriram
-```
-Optional worker size per laptop: `./conf/install_conf.sh node3 4 4g` (cores, memory).
+## A. One-time setup (skip any step already done)
 
-## 2. Start daemons, in this order
+| # | Who | Command | Done when |
+|---|---|---|---|
+| A1 | everyone | `git pull` | up to date |
+| A2 | everyone | `sudo hostnamectl set-hostname nodeN` (your N from the table) | `hostname` prints nodeN in a new terminal |
+| A3 | everyone | add the 4 lines of `conf/hosts` to `/etc/hosts`, put `#` before the `127.0.1.1` line | `getent ahostsv4 node2` prints 10.113.232.74 |
+| A4 | everyone | `sudo ufw allow from 10.113.232.0/24` | `ping node1` … `ping node4` all answer |
+| A5 | Arnav, Blason, Shriram | `./tools/install_node.sh` | `FINGERPRINT` line identical on all three |
+| A6 | Monty | `node4_search/README.md` → Setup (venv, `/serving`) | `./tools/check_versions.sh node4` all OK |
+| A7 | Arnav | `./conf/install_conf.sh node1` | prints `installed configs for node1 (10.113.232.70)` |
+| A7 | Blason | `./conf/install_conf.sh node2` | prints `installed configs for node2 (10.113.232.74)` |
+| A7 | Shriram | `./conf/install_conf.sh node3` | prints `installed configs for node3 (10.113.232.128)` |
+| A8 | **Blason** | `hdfs namenode -format` **ONLY ONCE EVER** (it wipes HDFS) | `successfully formatted` |
+| A9 | Arnav | put `pages.jsonl` and `changes.jsonl` in `~/data/` | `ls ~/data` shows both |
+| A10 | Shriram | optional, to run ingestion from node3: `ssh-copy-id <arnav-user>@node1` | `ssh node1 hostname` prints node1, no password |
 
-| # | Where | Command |
+---
+
+## B. Start the cluster (every session, in this order)
+
+| # | Who | Command | Done when |
+|---|---|---|---|
+| B1 | **Blason** | `hdfs --daemon start namenode && hdfs --daemon start datanode` | `jps` shows NameNode + DataNode; http://node2:9870 opens |
+| B2 | **Shriram** | `start-master.sh && start-worker.sh spark://node3:7077` | http://node3:8080 shows ALIVE master |
+| B3 | **Shriram** | `hdfs --daemon start datanode` | `jps` shows DataNode |
+| B4 | **Blason** | `start-worker.sh spark://node3:7077` | http://node3:8080 shows **2 workers** |
+| B5 | **Shriram** | `hdfs dfsadmin -report \| grep "Live datanodes"` | **(2)** |
+| B6 | Blason | first time only: `hdfs dfs -mkdir -p /searchengine` | `hdfs dfs -ls /` shows it |
+| B7 | Arnav | `hdfs dfs -ls / && spark-submit --master spark://node3:7077 /opt/spark/examples/src/main/python/pi.py 10` | prints `Pi is roughly 3.14…` |
+| B8 | Monty | `cd node4_search && .venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000` (leave running) | http://node4:8000 opens |
+
+---
+
+## C. First real Phase 0 (the night before, NOT at the evaluation)
+
+| # | Who | Command | Done when |
+|---|---|---|---|
+| C1 | Arnav | only if toy data was ever ingested on the cluster: `node1_ingest/reset_tables.sh --all` | tables dropped |
+| C2 | Arnav | `node1_ingest/run_ingest.sh 0` | prints `phase 0 done` → tell Shriram |
+| C3 | Shriram | `./scripts/run_phase.sh 0 --skip-ingest` | prints `node4 is serving v0` |
+| C4 | Monty | open http://node4:8000 | badge shows **v0**, queries return results |
+| C5 | Arnav | `spark-sql -f demo/node1_checks.sql` | counts and reject reasons look sane |
+| C6 | Monty + Shriram | try 15–20 queries, fill the v0 column of `demo/queries.md` | 8–10 good queries chosen |
+
+With A10 done, C2 + C3 become one command on node3: `./scripts/run_phase.sh 0`.
+
+---
+
+## D. Phase 1 rehearsal (do it twice before the evaluation)
+
+| # | Who | Command | Done when |
+|---|---|---|---|
+| D1 | Arnav | `node1_ingest/run_ingest.sh 1` | prints `phase 1 done` → tell Shriram |
+| D2 | Shriram | `./scripts/run_phase.sh 1 --skip-ingest` | prints `node4 is serving v1` |
+| D3 | Monty | rerun the prepared queries | badge shows **v1**; fill the v1 column; at least 3 queries changed |
+| D4 | Arnav | `demo/idempotency.sh 1` | prints `RESULT: UNCHANGED` |
+| D5 | Shriram | `spark-submit demo/make_iceberg_demo.py`, then commit + push `demo/iceberg_demo.sql` | pushed |
+| D6 | Blason | `git pull`, `spark-sql --master spark://node3:7077`, paste statements 1–3 of `demo/iceberg_demo.sql` | snapshots listed; count now ≠ count at Phase 0 |
+| D7 | Shriram | `spark-submit node3_compute/pagerank.py --phase 1 --iterations 30` | iterations start printing |
+| D8 | Blason | at ~iteration 5: `stop-worker.sh` | node3:8080 shows node2 worker DEAD |
+| D9 | Shriram | watch D7 | still finishes (`wrote N ranks`) |
+| D10 | Blason | `start-worker.sh spark://node3:7077` | 2 workers again |
+| D11 | Shriram | `hdfs fsck /searchengine -files -blocks -locations \| tail -20` | blocks on node2 **and** node3 |
+
+### Reset after a rehearsal (back to "only Phase 0 done")
+
+| # | Who | Command | Done when |
+|---|---|---|---|
+| R1 | Monty | stop uvicorn, `rm -rf /serving/v*` | `/serving` empty |
+| R2 | Arnav | `node1_ingest/reset_tables.sh --all` (type `yes`) | all lake.search tables dropped |
+| R3 | Shriram | `hdfs dfs -rm -r -f /searchengine/export /searchengine/checkpoints` | gone |
+| R4 | everyone | Monty restarts uvicorn (B8), then redo **C2 → C4** | badge shows v0 again |
+
+---
+
+## E. Evaluation day
+
+**Before the evaluator arrives:** run section **B**, check Node 4 shows **v0** (Phase 0 was done the night
+before; `/serving/v0` survives restarts). Keep http://node3:8080, http://node2:9870 and http://node4:8000 open.
+
+| # | Rubric | Who | Command / action |
+|---|---|---|---|
+| E1 | Infra (3 M) | Blason | `jps`, `hdfs dfsadmin -report`, node2:9870 → Datanodes tab |
+| E2 | Infra | Shriram | node3:8080 (2 workers), D11 |
+| E3 | Live Phase 1 (6 M) | Arnav | D1, explain the reject / dedup summary |
+| E4 | Live Phase 1 | Shriram | D2, explain each step as it runs |
+| E5 | Live Phase 1 | Monty | badge flips v0 → v1, show the changed queries |
+| E6 | Search (3 M) | Monty | prepared queries from `demo/queries.md`, explain BM25 + blend |
+| E7 | Idempotency (2 M) | Arnav | D4 → `UNCHANGED` |
+| E8 | Iceberg | Shriram, then Blason | D5, then D6 |
+| E9 | Fault tolerance (if asked) | Shriram + Blason | D7 → D10 |
+
+Rollback only if asked: statement 4 in `demo/iceberg_demo.sql`, and **always roll forward right after**.
+
+---
+
+## F. Shut down (reverse order)
+
+| # | Who | Command |
 |---|---|---|
-| 1 | node2 (first time only) | `hdfs namenode -format` |
-| 2 | node2 | `hdfs --daemon start namenode` then `hdfs --daemon start datanode` |
-| 3 | node3 | `hdfs --daemon start datanode` |
-| 4 | node3 | `start-master.sh` then `start-worker.sh spark://node3:7077` |
-| 5 | node2 | `start-worker.sh spark://node3:7077` |
-| 6 | node2 | `hdfs dfs -mkdir -p /searchengine` |
+| F1 | Monty | Ctrl-C uvicorn |
+| F2 | Blason | `stop-worker.sh` |
+| F3 | Shriram | `stop-worker.sh && stop-master.sh && hdfs --daemon stop datanode` |
+| F4 | Blason | `hdfs --daemon stop datanode && hdfs --daemon stop namenode` |
 
-Verify from node3:
-```bash
-hdfs dfsadmin -report | grep "Live datanodes"    # (2)
-```
-http://node3:8080 shows 2 ALIVE workers.
+Next session: section **B** again. **Never** rerun A8.
 
-## 3. Client nodes
-
-- **Node 1 (Arnav):** `hdfs dfs -ls /` works; `pages.jsonl` and `changes.jsonl` are in `~/data/`.
-- **Node 4 (Monty):** `sudo mkdir -p /serving && sudo chown $USER /serving`, then from `node4_search/`:
-  `.venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000`. Check http://node4:8000.
-
-## 4. Who runs ingestion
-
-- **Option A (one command from node3):** passwordless ssh node3 → node1:
-  ```bash
-  ssh-keygen -t ed25519            # on node3, if no key yet
-  ssh-copy-id <arnav-user>@node1
-  ```
-  If the Linux username differs, add `Host node1` / `User <arnav-user>` to `~/.ssh/config`.
-  If the repo path on node1 differs, pass `NODE1_REPO=/path/on/node1`.
-- **Option B (simpler):** Arnav runs `node1_ingest/run_ingest.sh 0` on node1, then node3 runs
-  `./scripts/run_phase.sh 0 --skip-ingest`.
-
-## 5. First real run (node3)
-
-```bash
-./scripts/run_phase.sh 0          # add --skip-ingest for option B
-```
-Success: each step prints its time, `export/v0/_SUCCESS` exists, Node 4's UI badge shows **v0**.
-Then rehearse Phase 1 with `demo/node3_demos.md`.
+---
 
 ## When it breaks
 
-| Symptom | Likely cause |
+| Symptom | Fix |
 |---|---|
-| Only 1 live DataNode | `127.0.1.1` line still active, or hostname not set to `nodeN` |
-| Spark job stuck at "Initial job has not accepted any resources" | wrong `spark.driver.host` on the driver machine, or firewall blocking 7078/7079 |
-| Node 4 downloads fail | node4's `/etc/hosts` missing node2/node3 (WebHDFS redirects to `node2:9864` / `node3:9864`) |
+| Only 1 live DataNode | `127.0.1.1` line still active, or hostname isn't `nodeN`; fix, restart that DataNode |
+| Worker missing on node3:8080 | start the master (B2) first, then rerun `start-worker.sh` |
+| Job stuck at "Initial job has not accepted any resources" | wrong `spark.driver.host` on the driver machine (rerun A7) or firewall (A4) |
+| Node 4 downloads fail | node4 `/etc/hosts` missing node2/node3 (WebHDFS redirects to `:9864`) |
+| A `run_phase.sh` step fails | Node 4 keeps serving the previous version; fix it, rerun the same command (every step is idempotent) |
 | NameNode won't start | `tail -50 /opt/hadoop/logs/*namenode*.log` |
