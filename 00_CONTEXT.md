@@ -207,7 +207,7 @@ search-engine/
   00_CONTEXT.md            # this file
   tasks/                   # one task file per person
   common/stopwords.txt     # shared tokenizer stopwords (Shriram)
-  common/tokenize.py       # reference tokenizer, copied by Node 3 & Node 4
+  common/tokenizer.py       # reference tokenizer, copied by Node 3 & Node 4
   conf/                    # Hadoop + Spark configs for nodes 1–3 (Shriram)
   node1_ingest/            # Arnav
   node3_compute/           # Shriram

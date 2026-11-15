@@ -22,7 +22,7 @@
 2. Download the Iceberg runtime jar into `/opt/spark/jars/` on nodes 1, 2, 3.
 3. On node3: start DataNode (`hdfs --daemon start datanode`), Spark master (`start-master.sh`), Spark worker (`start-worker.sh spark://node3:7077`).
 4. Verify: `hdfs dfsadmin -report` shows 2 live DataNodes; master UI at `node3:8080` shows 2 workers.
-5. Write a `common/tokenize.py` + `common/stopwords.txt` and send to Monty (Node 4 must tokenize queries identically).
+5. Write a `common/tokenizer.py` + `common/stopwords.txt` and send to Monty (Node 4 must tokenize queries identically).
 
 ## B. Jobs (`node3_compute/`)
 

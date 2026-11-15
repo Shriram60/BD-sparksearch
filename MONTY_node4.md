@@ -2,7 +2,7 @@
 
 > **For Claude:** read `00_CONTEXT.md` first. Monty owns Node 4 only. Node 4 runs **no Spark, no
 > HDFS daemons, and never queries Iceberg**. It only reads the Parquet export defined in CONTEXT §4.7.
-> The query tokenizer must be identical to Node 3's (CONTEXT §4.6): use `common/tokenize.py` from Shriram.
+> The query tokenizer must be identical to Node 3's (CONTEXT §4.6): use `common/tokenizer.py` from Shriram.
 
 ## Rubric you carry
 - Search verification (3 M).
