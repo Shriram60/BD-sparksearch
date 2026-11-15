@@ -1,0 +1,11 @@
+{"doc_id": "1", "url": "https://simple.wikipedia.org/wiki/Apple", "title": "Apple", "text": "An apple is a sweet fruit. Apples can be red, green or yellow.", "version": 2, "links": ["2", "3", "99"]}
+{"doc_id": "2", "url": "https://simple.wikipedia.org/wiki/Banana", "title": "Banana", "text": "A banana is a long yellow fruit.", "version": 1, "links": ["1"]}
+{"doc_id": "5", "url": "https://simple.wikipedia.org/wiki/River", "title": "River", "text": "OLD river text", "version": 0, "links": []}
+{"doc_id": "99", "url": "https://simple.wikipedia.org/wiki/Pear", "title": "Pear", "text": "A pear is a fruit related to the apple.", "version": 1, "links": ["1"]}
+{"doc_id": "20", "url": "https://simple.wikipedia.org/wiki/Volcano", "title": "Volcano", "text": "A volcano is a mountain that can erupt lava.", "version": 1, "links": ["11", "3"]}
+{"doc_id": "20", "url": "https://simple.wikipedia.org/wiki/Volcano", "title": "Volcano", "text": "A volcano is a mountain that erupts hot lava and ash.", "version": 2, "links": ["11", "3"]}
+{"doc_id": "10", "version": 2, "op": "delete"}
+{"doc_id": "7", "version": 1, "op": "delete"}
+{"doc_id": "555", "version": 1, "op": "delete"}
+{"doc_id": "21", "version": 1, "op": "explode", "url": "https://simple.wikipedia.org/wiki/Q", "title": "Q", "text": "q"}
+{"doc_id": "22", broken

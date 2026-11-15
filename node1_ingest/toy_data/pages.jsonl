@@ -1,0 +1,26 @@
+{"doc_id": "1", "url": "https://simple.wikipedia.org/wiki/Apple", "title": "Apple", "text": "An apple is a sweet fruit that grows on apple trees.", "version": 1, "links": ["2", "3", "99"]}
+{"doc_id": "2", "url": "https://simple.wikipedia.org/wiki/Banana", "title": "Banana", "text": "A banana is a long yellow fruit.", "version": 1, "links": ["1"]}
+{"doc_id": "3", "url": "https://simple.wikipedia.org/wiki/Tree", "title": "Tree", "text": "A tree is a tall plant with a trunk and branches.", "version": 1, "links": ["1", "4", "3"]}
+{"doc_id": "4", "url": "https://simple.wikipedia.org/wiki/Forest", "title": "Forest", "text": "A forest is a large area covered with trees.", "version": 1, "links": ["3", "3", "3"]}
+{"doc_id": "5", "url": "https://simple.wikipedia.org/wiki/River", "title": "River", "text": "A river is a natural stream of water.", "version": 1, "links": ["6"]}
+{"doc_id": "6", "url": "https://simple.wikipedia.org/wiki/Ocean", "title": "Ocean", "text": "An ocean is a very large body of salt water.", "version": 1, "links": ["5", "7"]}
+{"doc_id": "7", "url": "https://simple.wikipedia.org/wiki/Fish", "title": "Fish", "text": "Fish live in water and breathe with gills.", "version": 1, "links": ["6", "5"]}
+{"doc_id": "8", "url": "https://simple.wikipedia.org/wiki/Computer", "title": "Computer", "text": "A computer is a machine that processes data.", "version": 1, "links": ["9"]}
+{"doc_id": "9", "url": "https://simple.wikipedia.org/wiki/Internet", "title": "Internet", "text": "The internet connects computers around the world.", "version": 1, "links": ["8", "10"]}
+{"doc_id": "10", "url": "https://simple.wikipedia.org/wiki/Wikipedia", "title": "Wikipedia", "text": "Wikipedia is a free online encyclopedia.", "version": 1, "links": ["9"]}
+{"doc_id": "8", "url": "https://simple.wikipedia.org/wiki/Computer", "title": "Computer", "text": "OLD duplicate of computer with lower version.", "version": 0, "links": []}
+{"doc_id": "11", "url": "https://simple.wikipedia.org/wiki/Mountain", "title": "Mountain", "text": "A mountain is a very high hill.", "version": 2, "links": ["3"]}
+{"doc_id": "11", "url": "https://simple.wikipedia.org/wiki/Mountain", "title": "Mountain", "text": "A mountain is a very high hill. (v1 dup)", "version": 1, "links": ["3"]}
+{"doc_id": "12", "url": "https://simple.wikipedia.org/wiki/Broken", "title": "Broken"
+this is not json at all
+[1, 2, 3]
+{"url": "https://simple.wikipedia.org/wiki/NoId", "title": "No id", "text": "x", "version": 1, "links": []}
+{"doc_id": "13", "url": "https://simple.wikipedia.org/wiki/X", "title": "X", "text": "x", "version": "abc", "links": []}
+{"doc_id": "14", "url": "https://simple.wikipedia.org/wiki/Y", "title": "Y", "text": "   ", "version": 1, "links": []}
+{"doc_id": "15", "url": "https://simple.wikipedia.org/wiki/Z", "title": "", "text": "zzz", "version": 1, "links": []}
+{"doc_id": "16", "url": "not-a-url", "title": "Bad url", "text": "t", "version": 1, "links": []}
+{"doc_id": "17", "url": "https://simple.wikipedia.org/wiki/L", "title": "L", "text": "t", "version": 1, "links": "oops"}
+{"doc_id": "18", "url": "https://simple.wikipedia.org/wiki/V", "title": "V", "text": "t", "links": []}
+{"doc_id": "19", "url": "https://simple.wikipedia.org/wiki/F", "title": "F", "text": "t", "version": 1.5, "links": []}
+
+this is not json at all
