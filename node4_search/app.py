@@ -121,7 +121,9 @@ def ui():
 
 
 @app.get("/search")
-def search(q: str = "", k: int = Query(10, ge=1, le=100), version: int | None = None):
+def search(q: str = "", k: int = Query(10, ge=1, le=100), version: int | None = None,
+           limit: int | None = Query(None, ge=1, le=100)):
+    k = limit or k  # the course's verification commands pass ?limit= instead of ?k=
     view = state.view  # read once: this request sticks to one index even if a swap happens
     if version is None:
         index = view.live
