@@ -34,7 +34,7 @@ Backups:
 | 7 | ocean | Indian Ocean (1978), Arctic Ocean (1980), Pacific Ocean (1975) | Indian Ocean (1978), Arctic Ocean (1980), Pacific Ocean (1975) | no |
 | 8 | human body | Human body (353), Anatomy (50), Skin (772) | Human body (353), Death (209), Skin (772) | Anatomy (50) deleted |
 
-## Changed for PageRank reasons only (don't use in the demo until the PageRank issue below is settled)
+## Changed only because PageRank moved (correct, but confusing live, so don't demo)
 
 | Query | v0 top 3 | v1 top 3 |
 |---|---|---|
@@ -43,24 +43,20 @@ Backups:
 | language | Language (419), Tone language (2012), First language (497) | Dutton's Speedwords (191), Capitalization (176), Language (419) |
 | religion | Religion (653), Supernatural (752), Being (85) | Christian (170), Religion (653), Cuba (178) |
 
-## Open issue: PageRank shift in v1 (Node 1 / Node 3, found from the exports on node4)
+## Why PageRank moves in v1 (checked by Shriram, not a bug)
 
-- Every one of the 25 updated pages lost 71–84% of its PageRank (v1/v0 ratio 0.16–0.29), e.g. Chemistry (108)
-  0.00176 → 0.00028, Beard (94) 0.00176 → 0.00028. Their update only appends one sentence to the text.
-- Unchanged pages: median ratio 1.06, but some C-range pages roughly doubled (Cube 180, Capitalization 176,
-  Christian 170, Cuba 178, Comet 168, Crust 166), which pushes them to #1 on unrelated queries.
-- Looks like links pointing TO updated pages were dropped by the Phase 1 links MERGE. Check on the cluster:
-  ```sql
-  SELECT count(*) FROM lake.search.links VERSION AS OF <phase0 links snapshot> WHERE dst_id = '108';
-  SELECT count(*) FROM lake.search.links WHERE dst_id = '108';
-  ```
-  If the second count is ~0, the MERGE is removing incoming links of changed docs.
-- Also: in v0, 480 of 1,000 docs share exactly the max PageRank (only 21 distinct values), so v0 PageRank is close
-  to flat. Worth a look at the links table for Phase 0 too.
+- Phase 1 rewires links: 124 links disappear, all explained by changes.jsonl (50 from deleted pages,
+  49 to deleted pages, 25 rewired by updated pages, overlapping). Links from unchanged pages: 0 lost.
+- Updated pages carry a new `links` list. E.g. Britain (105) goes from ['108'] to ['158'], so Chemistry (108)
+  loses its only incoming link and falls to the base PageRank: 0.00176 → 0.00028.
+- Pages that gain in-links rise (Crust, Comet, Capitalization, Christian, Cuba); corpus max goes 0.00176 → 0.00399.
+
+Viva example: "chemistry" in v1. Chemistry (Phase 1) still has the highest BM25 (5.71) but ranks #7, because one
+link change on a different page (Britain) cut its PageRank 6×, and PageRank is 30% of the final score.
 
 ## Avoid
 
-- computer, china: the updated pages Computer (112) and China (120) fall out of the top 5 in v1 (same PageRank issue).
+- computer, china: the updated pages Computer (112) and China (120) fall out of the top 5 in v1 (PageRank moved, see above).
 - chemistry: Chemistry (Phase 1) (108) drops from #1 to #7 in v1. It still has the highest BM25 (5.71), but its
   PageRank fell 0.00176 → 0.00028 while the pages above it kept ~0.0019. The corpus max rising (0.00176 → 0.00399)
   is only part of it: the max rose 2.3×, Chemistry's own PageRank fell 6.3×.
