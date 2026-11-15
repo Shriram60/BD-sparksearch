@@ -175,3 +175,45 @@ Stronger version (row counts, content hashes and snapshot ids of all Node 1 tabl
 3. **Export layout (Shriram, optional):** the course expects `docs.parquet` / `index.parquet` and
    `_READY` under `/serving/vN/` on HDFS. Ours is `/searchengine/export/vN/documents/`,
    `postings/`, `_SUCCESS` (CONTEXT §4.7). The page allows setup differences; just show ours.
+
+---
+
+## Verified on the cluster (16 Nov 2026, Shriram)
+
+Every check above was run against the real cluster (Spark master node3, HDFS, Node 4 live on v1),
+after the real Phase 0 + Phase 1 runs. **Temporary setup:** Blason was away, so node2's role
+(NameNode + DataNode) ran on node3's machine. That's why there is 1 DataNode and 1 replica below;
+redo section 1 once node2 is back.
+
+| Check | Result | |
+|---|---|---|
+| 1. `dfsadmin -report` | `Live datanodes (1)` | ⚠️ needs node2 back: expect 2 |
+| 1. `pages.jsonl` on HDFS | `/searchengine/raw/phase0/pages.jsonl`, 9834481 bytes, `HEALTHY` | ⚠️ `Live_repl=1` (target 2) until node2 is back |
+| 1. baseline beard (v0) | Beard (94) #2, plain title | ✅ |
+| 1. baseline rank 146 (v0) | 0.0017555 | ✅ |
+| 2.1 documents history | 2 snapshots: 6998397766212633409 (P0), 1807384531269279055 (P1) | ✅ |
+| 2.2 postings for `phase1-new-001` | document, added, phase, project | ✅ |
+| 2.3 rank rows for deleted doc 1 | 0 | ✅ |
+| 2.4 export v0 + v1 | `documents/*.parquet`, `postings/*.parquet`, `manifest.json`, `_SUCCESS` in both | ✅ |
+| 3. `/health` | `{"status":"ok","version":1,"num_docs":975,...}`, `v1 ready` | ✅ |
+| 3.1 doc 94 | `94  Beard (Phase 1)`; search: Mustache, Goatee, Hair, **Beard (Phase 1)**, Russia | ✅ |
+| 3.2 doc 146 | in-links 1 → 3 (144, 98, phase1-new-011); Cooking still #1; rank 0.0017555 → 0.0013917 | ✅ explained, see issue 1 |
+| 3.3 `plant growth` | HTTP 200, top 628 Plant | ✅ |
+| 4. idempotency | count 975 before and after; `demo/idempotency.sh 1` → `UNCHANGED` | ✅ |
+
+### Issue 1: independently confirmed (Shriram)
+
+A separate pure-Python PageRank over the same Iceberg snapshots matches `pagerank.py` to
+**2e-18 on every doc**. Doc 146: v0 0.0017555 → v1 0.0013917 (100 iterations: same; without
+dangling redistribution: 0.0010000 → 0.0007685, also a drop). Doc 144, 146's main source, drops
+0.0017555 → 0.0007522 even though it gains an in-link (from 94), because the chain of pages feeding
+it is rewired upstream. The new in-links from 98 and phase1-new-011 come from pages nobody links
+to, which only have the base rank of about 0.00028. **Evaluator answer:** "146 gains 2 in-links
+(show the links query), but PageRank depends on how important the linking pages are, not how many
+there are. Its main source 144 lost rank when Phase 1 rewired the chain feeding it, so 146's total
+falls. Our numbers match an independent implementation exactly."
+
+### Issue 2: still open (Monty)
+
+`/search?q=beard&limit=3` still returns 5 results: `limit` is ignored. Fix in `node4_search/app.py`:
+add `limit: int | None = Query(None, ge=1, le=100)` to `search()` and use `k = limit or k`.

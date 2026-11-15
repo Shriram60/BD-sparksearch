@@ -4,3 +4,6 @@ spark-warehouse/
 metastore_db/
 derby.log
 node4_search/.venv/
+derby.log
+metastore_db/
+spark-warehouse/
