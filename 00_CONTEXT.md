@@ -6,6 +6,7 @@
 > instead of changing it silently, because the other three nodes are coded against it.
 
 Course: Big Data 2026 (UE24CS343AB2), PES University. Team: Shriram, Arnav, Monty, Blason.
+Official spec (rubric, dataset, architecture): `Distributed Search Engine.html` in the repo root; this file wins on team decisions, the spec wins on requirements.
 
 ---
 
