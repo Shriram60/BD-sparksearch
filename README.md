@@ -82,7 +82,7 @@ sudo ufw allow from 10.113.232.0/24
 **3. Start the cluster** (order matters; full table in the run plan)
 ```bash
 # node2
-hdfs namenode -format                     # first time ever only
+hdfs namenode -format -clusterId bd-sparksearch   # first time ever only
 hdfs --daemon start namenode && hdfs --daemon start datanode
 # node3
 start-master.sh && start-worker.sh spark://node3:7077

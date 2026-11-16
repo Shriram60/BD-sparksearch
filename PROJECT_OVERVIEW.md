@@ -141,7 +141,7 @@ machine failing and can be read in parallel.
   where each copy lives. This is checked in the evaluation.
 - **Writing a file.** The client asks the NameNode where to write, then streams the data to the
   first DataNode, which forwards it to the second (a **write pipeline**).
-- **Formatting.** `hdfs namenode -format` creates an empty file system. It is run **once ever**:
+- **Formatting.** `hdfs namenode -format -clusterId bd-sparksearch` creates an empty file system. It is run **once ever**:
   running it again wipes everything.
 - **`fs.defaultFS = hdfs://node2:9000`** tells every client where the NameNode is.
 - **WebHDFS.** An HTTP API to HDFS on port 9870. Node4 uses it to download files without
@@ -391,7 +391,7 @@ If anything in Phase 1 fails, **node4 keeps serving v0**, which the spec require
 2. Nodes 1-3: `tools/install_node.sh` installs exactly Java 11, Hadoop 3.3.6, Spark 3.5.3 and
    Iceberg 1.6.1. `tools/check_versions.sh` must print the same `FINGERPRINT` line on all three.
 3. Nodes 1-3: `conf/install_conf.sh nodeN` installs the Hadoop and Spark configs.
-4. node2: `hdfs namenode -format`, once ever.
+4. node2: `hdfs namenode -format -clusterId bd-sparksearch`, once ever.
 
 ### 9.2 Starting the cluster (every session, this order)
 1. node2: NameNode, then DataNode.
@@ -626,6 +626,7 @@ Total 20, scaled to 10.
    - nodes 1, 3 and 4: `node2` → `10.113.232.74` in `/etc/hosts`
    - node3: `hdfs --daemon stop namenode && hdfs --daemon stop datanode && rm -rf /data/hdfs/namenode`
    - node4: `rm -rf /serving/v*`
+   - node2: format with `-clusterId bd-sparksearch` (node3's DataNode already carries that ID; a plain format gives a random `CID-…` and node3's DataNode is rejected with "Incompatible clusterIDs")
    - then `demo/cluster_bringup.md` A7/A8 → B → C → D, and regenerate `demo/iceberg_demo.sql`
 2. Fault-tolerance and replication demos (need node2's worker and DataNode).
 3. Night before the evaluation: run-plan sections B + C, so node4 is serving **v0**.

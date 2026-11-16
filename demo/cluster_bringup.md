@@ -44,7 +44,7 @@ stop with a red FAILED line on any error; node4 then keeps serving the previous 
 | A7 | Arnav | `./conf/install_conf.sh node1` | prints `installed configs for node1 (10.113.232.70)` |
 | A7 | Blason | `./conf/install_conf.sh node2` | prints `installed configs for node2 (10.113.232.74)` |
 | A7 | Shriram | `./conf/install_conf.sh node3` | prints `installed configs for node3 (10.113.232.128)` |
-| A8 | **Blason** | `hdfs namenode -format` **ONLY ONCE EVER** (it wipes HDFS) | `successfully formatted` |
+| A8 | **Blason** | `hdfs namenode -format -clusterId bd-sparksearch` **ONLY ONCE EVER** (it wipes HDFS) | `successfully formatted` |
 | A9 | Arnav | put `pages.jsonl` and `changes.jsonl` in `~/data/` | `ls ~/data` shows both |
 | A10 | Shriram | optional, to run ingestion from node3: `ssh-copy-id <arnav-user>@node1` | `ssh node1 hostname` prints node1, no password |
 
@@ -148,6 +148,7 @@ Next session: section **B** again. **Never** rerun A8.
 | Only 1 live DataNode | `127.0.1.1` line still active, or hostname isn't `nodeN`; fix, restart that DataNode |
 | Worker missing on node3:8080 | start the master (B2) first, then rerun `start-worker.sh` |
 | Job stuck at "Initial job has not accepted any resources" | wrong `spark.driver.host` on the driver machine (rerun A7) or firewall (A4) |
+| node3 DataNode log: `Incompatible clusterIDs` | NameNode was formatted without `-clusterId bd-sparksearch`; on node3 stop the DataNode, `rm -rf /data/hdfs/datanode/*`, start it again |
 | Node 4 downloads fail | node4 `/etc/hosts` missing node2/node3 (WebHDFS redirects to `:9864`) |
 | A `run_phase.sh` step fails | Node 4 keeps serving the previous version; fix it, rerun the same command (every step is idempotent) |
 | NameNode won't start | `tail -50 /opt/hadoop/logs/*namenode*.log` |

@@ -55,7 +55,7 @@ cp iceberg-spark-runtime-3.5_2.12-1.6.1.jar    /opt/spark/jars/
 ## 4. Format HDFS (ONE TIME ONLY, EVER)
 
 ```bash
-hdfs namenode -format
+hdfs namenode -format -clusterId bd-sparksearch
 ```
 ⚠️ **Never run this again.** Running it a second time erases the cluster and the DataNodes will refuse to join. If something breaks, ask Shriram instead.
 
